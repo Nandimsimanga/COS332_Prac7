@@ -1,5 +1,5 @@
 # COS332 Practical 7
-
+MD5 (COS332_Prac7.jar) = 74afcc25ef21fd0296dcd6eddc838136
 This project implements POP3 and SMTP clients using raw sockets for COS332 with the support of *GreenMail*
 
 Practical 7:
