@@ -147,16 +147,7 @@ public class POP3Client {
     }
     
     public static void main(String[] args) {
-        try {
-            POP3Client client = new POP3Client();
-            client.connect("localhost", 3110);
-            client.login("user@example.com", "user@example.com");
-            System.out.println("Login successful!");
-            System.out.println("Message count: " + client.getStat());
-            System.out.println("Message list: " + client.listMessages());
-            client.quit();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        System.out.println("Use MailViewer for mailbox listing and actions.");
+        MailViewer.main(args);
     }
 }

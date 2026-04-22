@@ -1,7 +1,8 @@
 # COS332 Practical 7
 
-This project implements POP3 and SMTP clients using raw sockets for COS332 Practical 7, plus two application programs:
+This project implements POP3 and SMTP clients using raw sockets for COS332 with the support of *GreenMail*
 
+Practical 7:
 - a vacation auto-responder
 - a command-line mail viewer/deleter
 
@@ -37,7 +38,21 @@ The implementation explicitly speaks protocol commands (no high-level email libr
     - POP3: `localhost:3110`
     - SMTP: `localhost:2525` (or `3025` in `TestSMTP`)
 
-## Compile
+## Full Instructions (Setup, Run, Demo)
+
+### 1) Start your mail servers first
+
+Start the GreenMail container.
+
+### 2) Verify ports are listening
+
+Run:
+
+```bash
+lsof -nP -iTCP -sTCP:LISTEN | rg "2525|3025|3110"
+```
+
+### 3) Compile all Java files
 
 From the project folder:
 
@@ -45,66 +60,40 @@ From the project folder:
 javac *.java
 ```
 
-## Run
-
-### 1) POP3 client quick check
-
-```bash
-java POP3Client
-```
-
-This runs the built-in sample `main` that connects, logs in, prints message count/list, and quits.
-
-### 2) SMTP send test
+### 4) Test SMTP sending (`TestSMTP`)
 
 ```bash
 java TestSMTP
 ```
 
-Sends one test mail using `SMTPClient`.
+### 5) Run Mail Viewer
 
-### 3) Vacation responder
-
-```bash
-java VacationResponder
-```
-
-Behavior:
-
-- checks mailbox every 60 seconds
-- parses `From` and `Subject`
-- only replies when subject is exactly `prac7`
-- replies once per sender per runtime
-- keeps original mail on server (no delete calls)
-
-Stop with `Ctrl+C`.
-
-### 4) Mail viewer/deleter
-
-Use defaults:
-
-```bash
-java MailViewer
-```
-
-Or pass connection credentials:
-
-```bash
-java MailViewer <host> <port> <username> <password>
-```
-
-Example:
+Receiver mailbox:
 
 ```bash
 java MailViewer localhost 3110 user@example.com user@example.com
 ```
 
-It will:
+Sender mailbox:
 
-- list each message as `id | size | from | subject`
-- prompt for comma-separated ids to delete (for example `1,3,4`)
-- send `DELE` for selected ids
-- send `QUIT` to commit deletions
+```bash
+java MailViewer localhost 3110 testrecipient@test.com testrecipient@test.com
+```
+
+## Implemented Beyond Baseline
+
+- Added modern SMTP greeting support with `EHLO` (and `HELO` fallback in responder flow).
+- Added SMTP response-class handling for `4xx` (transient) vs `5xx` (permanent) failures.
+- Added proper multiline SMTP response reading (important for GreenMail compatibility).
+- Added POP3 `UIDL` support (`UIDL` and `UIDL <message-number>`).
+- Added POP3 `RSET` support for transaction reset behavior.
+- Added UID-based processed-message tracking in `VacationResponder` to avoid reprocessing.
+- Added RFC-referenced comments in protocol methods.
+- Enhanced `MailViewer` with:
+  - header-based listing (`id | size | from | subject`) using `LIST` + `TOP`
+  - full-message view option
+  - interactive actions: view, delete, vacation mode, quit.
+- Enhanced `TestSMTP` output to show step-by-step protocol actions during demos.
 
 ## Notes for Demonstration
 

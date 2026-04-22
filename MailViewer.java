@@ -8,6 +8,21 @@ import java.util.Scanner;
 import java.util.Set;
 
 public class MailViewer {
+    private static void startVacationResponderMode(String pop3Host, int pop3Port, String username, String password) {
+        VacationResponder responder = new VacationResponder(
+                pop3Host,
+                pop3Port,
+                username,
+                password,
+                "localhost",
+                3025,
+                "localhost",
+                username
+        );
+        System.out.println("Starting Vacation Responder mode. Press Ctrl+C to stop.");
+        responder.run();
+    }
+
     private static String extractHeader(String headers, String headerName) {
         String[] lines = headers.split("\\r?\\n");
         String prefix = headerName.toLowerCase() + ":";
@@ -68,8 +83,11 @@ public class MailViewer {
         try (Scanner scanner = new Scanner(System.in)) {
             client.connect(host, port);
             client.login(username, password);
+            System.out.println("Login successful as " + username + "!");
 
             List<String> messages = client.listMessages();
+            System.out.println("Message count: " + messages.size());
+            System.out.println("Message list: " + messages);
             if (messages.isEmpty()) {
                 System.out.println("No messages found.");
                 client.quit();
@@ -77,6 +95,7 @@ public class MailViewer {
             }
 
             System.out.println("Messages:");
+
             Set<Integer> validMessageIds = new HashSet<>();
             Map<Integer, String> messageSizes = new HashMap<>();
             for (String messageLine : messages) {
@@ -104,21 +123,58 @@ public class MailViewer {
                 System.out.println("  " + msgId + " | size=" + size + " | from=" + from + " | subject=" + subject);
             }
 
-            System.out.print("Enter message numbers to delete (comma-separated), or press Enter to skip: ");
-            String input = scanner.nextLine();
+            System.out.println();
+            System.out.println("Choose an action:");
+            System.out.println("  1) View full message");
+            System.out.println("  2) Delete selected messages");
+            System.out.println("  3) Vacation responder mode");
+            System.out.println("  4) Quit");
+            System.out.print("Enter 1, 2, 3, or 4: ");
+            String action = scanner.nextLine().trim();
 
-            List<Integer> toDelete = parseDeleteSelection(input, validMessageIds);
-            for (int msgNum : toDelete) {
-                boolean deleted = client.deleteMessage(msgNum);
-                if (deleted) {
-                    System.out.println("Marked message " + msgNum + " for deletion.");
-                } else {
-                    System.out.println("Failed to delete message " + msgNum + ".");
+            if ("1".equals(action)) {
+                System.out.print("Enter message number to view: ");
+                String msgInput = scanner.nextLine().trim();
+                try {
+                    int msgNum = Integer.parseInt(msgInput);
+                    if (validMessageIds.contains(msgNum)) {
+                        String fullMessage = client.retrieveMessage(msgNum);
+                        System.out.println("----- BEGIN MESSAGE " + msgNum + " -----");
+                        System.out.println(fullMessage);
+                        System.out.println("----- END MESSAGE " + msgNum + " -----");
+                    } else {
+                        System.out.println("Invalid message number: " + msgInput);
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid input: " + msgInput);
                 }
-            }
+                client.quit();
+                System.out.println("Done. QUIT sent; no messages were deleted.");
+            } else if ("2".equals(action)) {
+                System.out.print("Enter message numbers to delete (comma-separated), or press Enter to skip: ");
+                String input = scanner.nextLine();
 
-            client.quit();
-            System.out.println("Done. QUIT sent; deletions applied.");
+                List<Integer> toDelete = parseDeleteSelection(input, validMessageIds);
+                for (int msgNum : toDelete) {
+                    boolean deleted = client.deleteMessage(msgNum);
+                    if (deleted) {
+                        System.out.println("Marked message " + msgNum + " for deletion.");
+                    } else {
+                        System.out.println("Failed to delete message " + msgNum + ".");
+                    }
+                }
+                client.quit();
+                System.out.println("Done. QUIT sent; deletions applied.");
+            } else if ("3".equals(action)) {
+                client.quit();
+                startVacationResponderMode(host, port, username, password);
+            } else if ("4".equals(action)) {
+                client.quit();
+                System.out.println("Done. QUIT sent; no messages were deleted.");
+            } else {
+                client.quit();
+                System.out.println("Invalid choice. Exiting without deletions.");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

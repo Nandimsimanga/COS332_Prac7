@@ -10,13 +10,42 @@ public class SMTPClient {
     private BufferedReader in;
     private PrintWriter out;
 
+    // reads a full SMTP response, including multiline replies (code-... then code ...)
+    // RFC 5321 section 4.2 (reply line format)
+    private String readResponse() throws IOException {
+        String firstLine = in.readLine();
+        if (firstLine == null) {
+            return null;
+        }
+
+        if (firstLine.length() < 4) {
+            return firstLine;
+        }
+
+        String code = firstLine.substring(0, 3);
+        char separator = firstLine.charAt(3);
+        String currentLine = firstLine;
+
+        if (separator == '-') {
+            String nextLine;
+            while ((nextLine = in.readLine()) != null) {
+                currentLine = nextLine;
+                if (nextLine.startsWith(code + " ")) {
+                    break;
+                }
+            }
+        }
+
+        return currentLine;
+    }
+
     // connects to an SMTP server socket
     public void connect(String host, int port) throws IOException {
         socket = new Socket(host, port);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
 
-        String greeting = in.readLine();
+        String greeting = readResponse();
         ensureResponseStartsWith(greeting, "220", "CONNECT");
         System.out.println("Server: " + greeting);
     }
@@ -25,7 +54,7 @@ public class SMTPClient {
     private String sendCommand(String command) throws IOException {
         out.print(command + "\r\n");
         out.flush();
-        return in.readLine();
+        return readResponse();
     }
 
     // validates SMTP response codes and distinguishes transient 4xx from permanent 5xx failures
@@ -78,7 +107,7 @@ public class SMTPClient {
         out.print(messageContent + "\r\n.\r\n");
         out.flush();
 
-        response = in.readLine();
+        response = readResponse();
         ensureResponseStartsWith(response, "250", "MESSAGE BODY");
     }
 

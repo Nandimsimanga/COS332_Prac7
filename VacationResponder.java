@@ -109,7 +109,7 @@ public class VacationResponder {
                     continue;
                 }
 
-                if (!REQUIRED_SUBJECT.equals(subject)) {
+                if (!REQUIRED_SUBJECT.equalsIgnoreCase(subject)) {
                     System.out.println("Skipping message " + msgNum + " due to subject: " + subject);
                     continue;
                 }
@@ -139,7 +139,7 @@ public class VacationResponder {
             }
 
             try {
-                Thread.sleep(60000);
+                Thread.sleep(30000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
@@ -154,7 +154,7 @@ public class VacationResponder {
                 "user@example.com",
                 "user@example.com",
                 "localhost",
-                2525,
+                3025,
                 "localhost",
                 "user@example.com"
         );
